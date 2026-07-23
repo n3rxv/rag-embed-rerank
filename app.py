@@ -27,6 +27,12 @@ class RerankRequest(BaseModel):
 def health():
     return {"status": "ok"}
 
+@app.get("/warmup")
+def warmup_get():
+    embed_model.encode(["warmup query"], normalize_embeddings=True)
+    rerank_model.predict([["warmup query", "warmup document"]])
+    return {"status": "warmed up"}
+
 @app.post("/embed")
 def embed(req: EmbedRequest):
     embeddings = embed_model.encode(req.texts, normalize_embeddings=True)
