@@ -2,18 +2,25 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from typing import List
+import os
 
 app = FastAPI()
+
+# Use ONNX backend to keep memory under 512MB
+embed_model = SentenceTransformer(
+    'sentence-transformers/all-MiniLM-L6-v2',
+    backend='onnx',
+)
+rerank_model = CrossEncoder(
+    'cross-encoder/ms-marco-MiniLM-L-6-v2',
+    backend='onnx',
+)
 
 @app.on_event("startup")
 async def warmup():
     embed_model.encode(["warmup"], normalize_embeddings=True)
     rerank_model.predict([["warmup query", "warmup document"]])
     print("Models warmed up!")
-
-# Loads once at startup, stays in memory
-embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-rerank_model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
 
 class EmbedRequest(BaseModel):
     texts: List[str]
